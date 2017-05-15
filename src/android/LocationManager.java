@@ -62,6 +62,7 @@ import java.security.InvalidKeyException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.LinkedBlockingQueue;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
@@ -126,7 +127,7 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
         }
         //TODO AddObserver when page loaded
 
-        tryToRequestMarshmallowLocationPermission();
+        //tryToRequestMarshmallowLocationPermission();
     }
 
     /**
@@ -263,7 +264,21 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
                 return;
             }
 
-            final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
+            try {
+                requestPermissionsMethod.invoke(activity,
+                        new String[]{Manifest.permission.ACCESS_COARSE_LOCATION},
+                        PERMISSION_REQUEST_COARSE_LOCATION
+                );
+
+            } catch (IllegalAccessException e) {
+                Log.e(TAG, "IllegalAccessException while requesting permission for " +
+                        "ACCESS_COARSE_LOCATION:", e);
+            } catch (InvocationTargetException e) {
+                Log.e(TAG, "InvocationTargetException while requesting permission for " +
+                        "ACCESS_COARSE_LOCATION:", e);
+            }
+
+            /*final AlertDialog.Builder builder = new AlertDialog.Builder(activity);
             builder.setTitle("This app needs location access");
             builder.setMessage("Please grant location access so this app can detect beacons.");
             builder.setPositiveButton(android.R.string.ok, null);
@@ -288,6 +303,7 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
             });
 
             builder.show();
+            */
 
         } catch (final IllegalAccessException e) {
             Log.w(TAG, "IllegalAccessException while checking for ACCESS_COARSE_LOCATION:", e);
@@ -904,6 +920,32 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 
                 try {
 
+                    final Activity activity = cordova.getActivity();
+
+                    final Method checkSelfPermissionMethod = getCheckSelfPermissionMethod();
+
+                    final Integer permissionCheckResult = (Integer) checkSelfPermissionMethod.invoke(
+                            activity, Manifest.permission.ACCESS_COARSE_LOCATION);
+
+                    Log.i(TAG, "Permission check result for ACCESS_COARSE_LOCATION: " + String.valueOf(permissionCheckResult));
+
+                    JSONObject result = new JSONObject();
+
+                    if (permissionCheckResult == PackageManager.PERMISSION_GRANTED) {
+                        Log.i(TAG, "Permission for ACCESS_COARSE_LOCATION has already been granted.");
+                        result.put("authorizationStatus", "OK");
+                        return new PluginResult(PluginResult.Status.OK, result);
+                    } else {
+                        Log.i(TAG, "Permission for ACCESS_COARSE_LOCATION has not been granted.");
+                        result.put("authorizationStatus", "AuthorizationStatusNotDetermined");
+                        return new PluginResult(PluginResult.Status.OK, result);
+                    }
+                } catch (Exception e) {
+                    debugWarn("getAuthorizationStatus: " + e.getMessage());
+                }
+
+                try {
+
                     //Check app has the necessary permissions
                     if (!hasBlueToothPermission()) {
                         return new PluginResult(PluginResult.Status.ERROR, "Application does not BLUETOOTH or BLUETOOTH_ADMIN permissions");
@@ -934,6 +976,8 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 
             @Override
             public PluginResult run() {
+                Log.d("logmessage", "asking for permission");
+                tryToRequestMarshmallowLocationPermission();
                 return new PluginResult(PluginResult.Status.OK);
             }
         });
