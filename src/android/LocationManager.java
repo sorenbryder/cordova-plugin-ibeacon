@@ -976,7 +976,7 @@ public class LocationManager extends CordovaPlugin implements BeaconConsumer {
 
             @Override
             public PluginResult run() {
-                Log.d("logmessage", "asking for permission");
+                Log.d(TAG, "Calling tryToRequestMarshmallowLocationPermission()");
                 tryToRequestMarshmallowLocationPermission();
                 return new PluginResult(PluginResult.Status.OK);
             }
