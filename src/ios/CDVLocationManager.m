@@ -43,11 +43,6 @@
 - (void) initLocationManager {
     self.locationManager = [[CLLocationManager alloc] init];
     self.locationManager.delegate = self;
-
-
-    if (IsAtLeastiOSVersion(@"9.0")) {
-        self.locationManager.allowsBackgroundLocationUpdates = YES;
-    }
 }
 
 - (void) initPeripheralManager {
@@ -408,7 +403,7 @@
         NSDictionary *dict = @{@"authorizationStatus": authorizationStatusString};
         return [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsDictionary:dict];
 
-        
+
     } :command];
 }
 
